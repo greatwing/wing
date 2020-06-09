@@ -1,5 +1,5 @@
-github.com/davyxu/cellnet v0.0.0-20190612112848-4f8cb890a9f8 h1:hnIRsbLMSkTNYPuA+ALM6R7yrV/1wl+J02dQ7pIv5Bw=
-github.com/davyxu/cellnet v0.0.0-20190612112848-4f8cb890a9f8/go.mod h1:veOb1czkqh9rfO/+KLeAIzRT9vOk9gg3LNXuCXV+QdQ=
+github.com/davyxu/cellnet v0.0.0-20200605080832-5f5fbc34a3a1 h1:8F6XIMUiHFT/rSfl4tXbA03a3PgNcbLuD0zIkSpLe5I=
+github.com/davyxu/cellnet v0.0.0-20200605080832-5f5fbc34a3a1/go.mod h1:veOb1czkqh9rfO/+KLeAIzRT9vOk9gg3LNXuCXV+QdQ=
 github.com/davyxu/golog v0.1.0 h1:SsV3m2x37sCzFaQzq5OHc5S+PE2VMiL7XUx34JCa7mo=
 github.com/davyxu/golog v0.1.0/go.mod h1:YwChkFY5dCYt77yuPlWjcR6KlWqVJNbz3WkwC/8WgQk=
 github.com/davyxu/goobjfmt v0.1.0 h1:/Kz4X/UL4Jf5xOaQhP5DxzNtcwsfJqsz6ceoePeHBgA=
@@ -7,5 +7,10 @@ github.com/davyxu/goobjfmt v0.1.0/go.mod h1:KKrytCtCXny2sEg3ojQfJ4NThhBP8hKw/qM9
 github.com/davyxu/protoplus v0.1.0 h1:iKk94nwYZdEK8r1r4GZDkW7JnmLJTPYQSVUvBLBxsb8=
 github.com/davyxu/protoplus v0.1.0/go.mod h1:WzmNYPvYsyks3G81jCJ/vGY2ljs49qFMfCmXGwvxFLA=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
+github.com/gogo/protobuf v1.3.1 h1:DqDEcV5aeaTmdFBePNpYsp3FlcVH/2ISVVM9Qf8PSls=
+github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
+github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
+github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/mediocregopher/radix.v2 v0.0.0-20181115013041-b67df6e626f9/go.mod h1:fLRUbhbSd5Px2yKUaGYYPltlyxi1guJz1vCmo1RQL50=
+golang.org/x/tools v0.0.0-20181030221726-6c7e314b6563/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=

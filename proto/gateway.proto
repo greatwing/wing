@@ -1,0 +1,7 @@
+syntax = "proto3";  //指定版本
+package proto;
+message UserInfo {
+    string message = 1;   //消息
+    int32 length = 2;    //消息大小
+    int32 cnt = 3;      //消息计数
+}
