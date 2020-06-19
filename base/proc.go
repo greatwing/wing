@@ -7,6 +7,7 @@ import (
 	"github.com/davyxu/cellnet/msglog"
 	"github.com/davyxu/cellnet/proc"
 	"github.com/davyxu/cellnet/proc/tcp"
+	"github.com/greatwing/wing/base/service"
 	"reflect"
 )
 
@@ -40,7 +41,7 @@ func init() {
 
 		bundle.SetTransmitter(new(tcp.TCPMessageTransmitter))
 		bundle.SetHooker(proc.NewMultiHooker(
-			//new(service.SvcEventHooker), // 服务互联处理
+			new(service.SvcEventHooker), // 服务互联处理
 			//new(BackendMsgHooker),       // 网关消息处理
 			new(tcp.MsgHooker))) // tcp基础消息处理
 		bundle.SetCallback(proc.NewQueuedEventCallback(userCallback))

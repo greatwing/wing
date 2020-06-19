@@ -7,7 +7,7 @@ import (
 	"github.com/davyxu/golog"
 	"github.com/greatwing/wing/base/service/discovery"
 	"github.com/greatwing/wing/base/service/serviceid"
-	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/v3/clientv3"
 	"sync"
 	"time"
 )

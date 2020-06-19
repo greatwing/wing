@@ -25,6 +25,7 @@ func GetLocalSvcID() string {
 	return MakeLocalSvcID(config.GetProcName())
 }
 
+// 解析服务id
 func ParseSvcID(svcid string) (svcName string, svcIndex int, svcGroup string, err error) {
 
 	result := strings.FieldsFunc(svcid, func(c rune) bool {
