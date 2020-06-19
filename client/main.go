@@ -1,41 +1,21 @@
 package main
 
 import (
-	"bufio"
 	"github.com/davyxu/cellnet"
-	"github.com/davyxu/cellnet/examples/chat/proto"
+	_ "github.com/davyxu/cellnet/codec/gogopb"
 	"github.com/davyxu/cellnet/peer"
-	"github.com/davyxu/cellnet/proc"
-	"github.com/davyxu/golog"
-	"os"
-	"strings"
-
 	_ "github.com/davyxu/cellnet/peer/tcp"
+	"github.com/davyxu/cellnet/proc"
 	_ "github.com/davyxu/cellnet/proc/tcp"
+	"github.com/davyxu/golog"
+	"github.com/greatwing/wing/proto"
 )
 
 var log = golog.New("client")
 
-func ReadConsole(callback func(string)) {
-
-	for {
-
-		// 从标准输入读取字符串，以\n为分割
-		text, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			break
-		}
-
-		// 去掉读入内容的空白符
-		text = strings.TrimSpace(text)
-
-		callback(text)
-
-	}
-
-}
-
 func main() {
+
+	done := make(chan struct{})
 
 	// 创建一个事件处理队列，整个客户端只有这一个队列处理事件，客户端属于单线程模型
 	queue := cellnet.NewEventQueue()
@@ -49,10 +29,16 @@ func main() {
 		switch msg := ev.Message().(type) {
 		case *cellnet.SessionConnected:
 			log.Debugln("client connected")
+			ev.Session().Send(&proto.UserInfo{
+				Message: "I am Client",
+				Length:  1,
+				Cnt:     2,
+			})
 		case *cellnet.SessionClosed:
 			log.Debugln("client error")
-		case *proto.ChatACK:
-			log.Infof("sid%d say: %s", msg.Id, msg.Content)
+		case *proto.UserInfo:
+			log.Infof("msg:%v, len:%v, cnt:%d", msg.Message, msg.Length, msg.Cnt)
+			done <- struct{}{}
 		}
 	})
 
@@ -62,17 +48,5 @@ func main() {
 	// 事件队列开始循环
 	queue.StartLoop()
 
-	log.Debugln("Ready to chat!")
-
-	// 阻塞的从命令行获取聊天输入
-	ReadConsole(func(str string) {
-
-		p.(interface {
-			Session() cellnet.Session
-		}).Session().Send(&proto.ChatREQ{
-			Content: str,
-		})
-
-	})
-
+	<-done
 }

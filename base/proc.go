@@ -10,13 +10,24 @@ import (
 	"reflect"
 )
 
-func ListenMsg(msgId int, msgType reflect.Type) {
+var (
+	listenerByID = map[int][]cellnet.EventCallback{}
+)
+
+func RegisterPbMsgMeta(msgId int, msg interface{}) {
 	cellnet.RegisterMessageMeta(&cellnet.MessageMeta{
 		Codec: codec.MustGetCodec("gogopb"),
-		//Type:  reflect.TypeOf((*UserInfo)(nil)).Elem(),
-		Type: msgType,
+		Type:  reflect.TypeOf(msg),
 		ID:    msgId,
 	})
+}
+
+func ListenMsg(msgId int, callback cellnet.EventCallback) {
+	if prev, ok := listenerByID[msgId]; ok {
+		prev = append(prev, callback)
+	} else {
+		listenerByID[msgId] = []cellnet.EventCallback{callback}
+	}
 }
 
 func init() {
