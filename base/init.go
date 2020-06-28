@@ -6,6 +6,9 @@ import (
 	"github.com/davyxu/cellnet/peer"
 	_ "github.com/davyxu/cellnet/peer/tcp"
 	"github.com/davyxu/cellnet/proc"
+	"github.com/greatwing/wing/base/config"
+	"github.com/greatwing/wing/base/log"
+	"github.com/greatwing/wing/base/msg"
 	"github.com/greatwing/wing/base/service"
 	"github.com/greatwing/wing/base/service/discovery"
 	"time"
@@ -19,13 +22,13 @@ type ServiceParameter struct {
 	SvcName      string // 服务名,注册到服务发现
 	NetProcName  string // cellnet处理器名称
 	NetPeerType  string // cellnet的PeerType
-	ListenAddr   string // socket侦听地址
+	ListenAddr   string // socket侦听地址,scheme://host:minPort~maxPort/path
 	MaxConnCount int    // 最大连接数量
-	NoQueue      bool   // 不使用队列
 }
 
 // 初始化框架
-func Init(procName string) {
+func Init(svcName string) {
+	log.Infof("config = %s", config.ToJson())
 
 	msglog.SetCurrMsgLogMode(msglog.MsgLogMode_BlackList)
 	msglog.SetMsgLogRule("proto.PingACK", msglog.MsgLogRule_BlackList)
@@ -34,51 +37,36 @@ func Init(procName string) {
 	Queue = cellnet.NewEventQueue()
 	Queue.StartLoop()
 
-	service.Init(procName)
+	service.Init(svcName)
 	service.ConnectDiscovery() //连接服务发现
 }
 
 // 等待退出信号
 func StartLoop() {
-	//fxmodel.CheckReady()
-	//
-	//if onReady != nil {
-	//	cellnet.QueuedCall(fxmodel.Queue, onReady)
-	//}
-
 	service.WaitExitSignal()
 }
 
 // 退出处理
 func Exit() {
 	service.StopAllService()
+	log.Sync()
+	log.Rotate()
 }
 
-func CreateCommnicateAcceptor(param ServiceParameter) cellnet.Peer {
+func Accept(param ServiceParameter) cellnet.Peer {
 
 	if param.NetPeerType == "" {
 		param.NetPeerType = "tcp.Acceptor"
 	}
 
-	var q cellnet.EventQueue
-	if !param.NoQueue {
-		q = Queue
+	if param.SvcName == "" {
+		param.SvcName = config.GetSvcName()
 	}
 
-	p := peer.NewGenericPeer(param.NetPeerType, param.SvcName, param.ListenAddr, q)
+	p := peer.NewGenericPeer(param.NetPeerType, param.SvcName, param.ListenAddr, Queue)
 
-	//"tcp.svc"
-	proc.BindProcessorHandler(p, param.NetProcName, func(ev cellnet.Event) {
-
-		meta := cellnet.MessageMetaByMsg(ev.Message())
-		if meta != nil {
-			if listeners, ok := listenerByID[meta.ID]; ok {
-				for _, callback := range listeners {
-					callback(ev)
-				}
-			}
-		}
-	})
+	//"svc.backend"
+	proc.BindProcessorHandler(p, param.NetProcName, msg.Process)
 
 	if opt, ok := p.(cellnet.TCPSocketOption); ok {
 		opt.SetSocketBuffer(2048, 2048, true)
@@ -95,49 +83,38 @@ func CreateCommnicateAcceptor(param ServiceParameter) cellnet.Peer {
 	return p
 }
 
-func CreateCommnicateConnector(param ServiceParameter) {
+// 连接指定的服务
+//  filters 根据规则过滤发现的服务,FilterFunc返回true表示匹配
+func Connect(param ServiceParameter, filters ...service.FilterFunc) service.MultiPeer {
 	if param.NetPeerType == "" {
 		param.NetPeerType = "tcp.Connector"
 	}
 
-	//msgFunc := proto.GetMessageHandler(service.GetProcName())
+	mp := service.DiscoveryService(param.SvcName, param.MaxConnCount, func(multiPeer service.MultiPeer, sd *discovery.ServiceDesc) {
 
-	opt := service.DiscoveryOption{
-		MaxCount: param.MaxConnCount,
-	}
+		p := peer.NewGenericPeer(param.NetPeerType, param.SvcName, sd.Address(), Queue)
 
-	//opt.Rules = service.LinkRules
-
-	var q cellnet.EventQueue
-	if !param.NoQueue {
-		q = Queue
-	}
-
-	mp := service.DiscoveryService(param.SvcName, opt, func(multiPeer service.MultiPeer, sd *discovery.ServiceDesc) {
-
-		p := peer.NewGenericPeer(param.NetPeerType, param.SvcName, sd.Address(), q)
-
-		proc.BindProcessorHandler(p, param.NetProcName, func(ev cellnet.Event) {
-
-			//if msgFunc != nil {
-			//	msgFunc(ev)
-			//}
-		})
+		proc.BindProcessorHandler(p, param.NetProcName, msg.Process)
 
 		if opt, ok := p.(cellnet.TCPSocketOption); ok {
 			opt.SetSocketBuffer(2048, 2048, true)
 		}
 
 		p.(cellnet.TCPConnector).SetReconnectDuration(time.Second * 3)
-
-		//
 		multiPeer.AddPeer(sd, p)
-
 		p.Start()
-	})
+
+	}, filters...)
 
 	mp.(service.MultiPeer).SetContext("multi", param)
 
-	service.AddLocalService(mp)
+	service.AddLocalService(mp.(cellnet.Peer))
 
+	return mp
+}
+
+func ConnectToRedis(addr string) {
+	p := peer.NewGenericPeer("redix.Connector", "redis", addr, Queue)
+	p.Start()
+	service.AddLocalService(p)
 }

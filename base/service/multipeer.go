@@ -14,13 +14,16 @@ type MultiPeer interface {
 	cellnet.ContextSet
 
 	AddPeer(sd *discovery.ServiceDesc, p cellnet.Peer)
+
+	SkipReadyCheck()
 }
 
 type multiPeer struct {
 	peer.CoreContextSet
-	peers      []cellnet.Peer
-	peersGuard sync.RWMutex
-	context    interface{}
+	peers          []cellnet.Peer
+	peersGuard     sync.RWMutex
+	context        interface{}
+	skipReadyCheck bool
 }
 
 func (self *multiPeer) Start() cellnet.Peer {
@@ -42,7 +45,14 @@ func (self *multiPeer) GetPeers() []cellnet.Peer {
 	return self.peers
 }
 
+func (self *multiPeer) SkipReadyCheck() {
+	self.skipReadyCheck = true
+}
+
 func (self *multiPeer) IsReady() bool {
+	if self.skipReadyCheck {
+		return true
+	}
 
 	peers := self.GetPeers()
 

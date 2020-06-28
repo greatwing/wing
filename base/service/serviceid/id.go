@@ -22,7 +22,7 @@ func MakeLocalSvcID(svcName string) string {
 
 // 获得本进程的服务id
 func GetLocalSvcID() string {
-	return MakeLocalSvcID(config.GetProcName())
+	return MakeLocalSvcID(config.GetSvcName())
 }
 
 // 解析服务id

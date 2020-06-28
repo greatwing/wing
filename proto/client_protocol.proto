@@ -1,0 +1,30 @@
+syntax = "proto3";  //指定版本
+package proto;
+
+//协议号
+enum Ptl {
+    UNSPECIFIED = 0;
+    reserved 1 to 9999; //10000以内的协议号供服务器内部使用
+    reserved 65536 to max; //用2个字节表示协议号，最大65535
+
+    Ping = 10000;
+
+    //登录
+    LoginReq = 10001;
+    LoginRsp = 10002;
+}
+
+message Msg_Ping{}
+
+//登录
+message Msg_LoginReq {
+    string uid = 1;
+    string token = 2;
+}
+message Msg_LoginRsp{
+    enum ErrorCode {
+        Succeed = 0;
+    }
+    ErrorCode result = 1;
+    string message = 2; //测试用
+}

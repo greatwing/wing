@@ -30,16 +30,10 @@ type Discovery interface {
 	Query(name string) (ret []*ServiceDesc)
 
 	// 注册服务变化通知，回调在其他线程执行
-	RegisterNotify(callback NotifyFunc)
+	Watch(svcName string, callback NotifyFunc)
 
-	// 设置值
-	SetValue(key string, value interface{}, optList ...interface{}) error
-
-	// 取值，并赋值到变量
-	GetValue(key string, valuePtr interface{}) error
-
-	// 删除值
-	DeleteValue(key string) error
+	// 重新拉取服务信息
+	Refresh(name string)
 
 	Close()
 }

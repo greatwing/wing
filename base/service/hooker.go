@@ -5,8 +5,10 @@ import (
 	"github.com/davyxu/cellnet/proc"
 	"github.com/davyxu/cellnet/proc/tcp"
 	"github.com/greatwing/wing/base/config"
+	"github.com/greatwing/wing/base/log"
 	"github.com/greatwing/wing/base/service/discovery"
 	"github.com/greatwing/wing/base/service/serviceid"
+	"github.com/greatwing/wing/proto"
 )
 
 // 服务互联消息处理
@@ -16,7 +18,7 @@ type SvcEventHooker struct {
 func (SvcEventHooker) OnInboundEvent(inputEvent cellnet.Event) (outputEvent cellnet.Event) {
 
 	switch msg := inputEvent.Message().(type) {
-	case *ServiceIdentifyACK:
+	case *proto.ServiceIdentify:
 
 		if pre := GetRemoteService(msg.SvcID); pre == nil {
 
@@ -31,8 +33,8 @@ func (SvcEventHooker) OnInboundEvent(inputEvent cellnet.Event) (outputEvent cell
 		if ctx.FetchContext("sd", &sd) {
 
 			// 用Connector的名称（一般是ProcName）让远程知道自己是什么服务，用于网关等需要反向发送消息的标识
-			inputEvent.Session().Send(&ServiceIdentifyACK{
-				SvcName: config.GetProcName(),
+			inputEvent.Session().Send(&proto.ServiceIdentify{
+				SvcName: config.GetSvcName(),
 				SvcID:   serviceid.GetLocalSvcID(),
 			})
 

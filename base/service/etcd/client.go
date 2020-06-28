@@ -4,15 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/davyxu/cellnet"
-	"github.com/davyxu/golog"
+	"github.com/greatwing/wing/base/log"
 	"github.com/greatwing/wing/base/service/discovery"
 	"github.com/greatwing/wing/base/service/serviceid"
 	"go.etcd.io/etcd/v3/clientv3"
 	"sync"
 	"time"
 )
-
-var log = golog.New("etcd")
 
 type discoveryEtcd struct {
 	//etcd client
@@ -23,64 +21,74 @@ type discoveryEtcd struct {
 	svcCacheGuard sync.RWMutex
 
 	//watch回调
-	notifyCallback discovery.NotifyFunc
-	notifyQueue    *cellnet.EventQueue
-	notifyGuard    sync.RWMutex
-	watchCancel    context.CancelFunc
+	notifyCallbacks map[string]discovery.NotifyFunc
+	notifyQueue     *cellnet.EventQueue
+	notifyGuard     sync.RWMutex
+	watchCancel     context.CancelFunc
 }
 
 // 注册服务
 func (d *discoveryEtcd) Register(desc *discovery.ServiceDesc) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	jsonBytes, err := json.Marshal(desc)
 	if err != nil {
 		return err
 	}
 
-	_, err = d.client.Put(ctx, serviceid.GetServiceKey(desc.ID), string(jsonBytes))
-	cancel()
+	//注册需要等待完成，没有超时
+	_, err = d.client.Put(context.Background(), serviceid.GetServiceKey(desc.ID), string(jsonBytes))
 	if err != nil {
-		log.Errorln(err)
+		log.Error(err)
 	}
 	return err
 }
 
 // 解注册服务
 func (d *discoveryEtcd) Deregister(svcid string) error {
+	//解注最多等10秒，防止进程不能关闭
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	_, err := d.client.Delete(ctx, serviceid.GetServiceKey(svcid))
 	cancel()
 	if err != nil {
-		log.Errorln(err)
+		log.Error(err)
 	}
 	return err
 }
 
 // 根据服务名查到可用的服务
 func (d *discoveryEtcd) Query(name string) (ret []*discovery.ServiceDesc) {
-	return
+	d.svcCacheGuard.RLock()
+	defer d.svcCacheGuard.RUnlock()
+
+	return d.svcCache[name]
 }
 
 // 注册服务变化通知
-func (d *discoveryEtcd) RegisterNotify(callback discovery.NotifyFunc) {
+func (d *discoveryEtcd) Watch(svcName string, callback discovery.NotifyFunc) {
 	d.notifyGuard.Lock()
-	d.notifyCallback = callback
+	d.notifyCallbacks[svcName] = callback
 	d.notifyGuard.Unlock()
+
+	d.startWatch(svcName)
+
+	// 立刻获取一下服务
+	d.Refresh(svcName)
 }
 
-// 设置值
-func (d *discoveryEtcd) SetValue(key string, value interface{}, optList ...interface{}) error {
-	return nil
-}
-
-// 取值，并赋值到变量
-func (d *discoveryEtcd) GetValue(key string, valuePtr interface{}) error {
-	return nil
-}
-
-// 删除值
-func (d *discoveryEtcd) DeleteValue(key string) error {
-	return nil
+// 拉取所有的服务信息
+func (d *discoveryEtcd) Refresh(svcName string) {
+	resp, err := d.client.Get(context.Background(), serviceid.ServiceKeyPrefix+"/"+svcName, clientv3.WithPrefix())
+	if err != nil {
+		log.Error(err)
+	} else {
+		for _, ev := range resp.Kvs {
+			//log.Infof("%q : %q\n", ev.Key, ev.Value)
+			var desc discovery.ServiceDesc
+			err := json.Unmarshal(ev.Value, &desc)
+			if err == nil {
+				d.updateSvcCache(&desc)
+			}
+		}
+	}
 }
 
 //关闭etcd client
@@ -92,15 +100,18 @@ func (d *discoveryEtcd) Close() {
 }
 
 //watch service变化
-func (d *discoveryEtcd) startWatch() {
+func (d *discoveryEtcd) startWatch(svcName string) {
 	var ctx context.Context
 	ctx, d.watchCancel = context.WithCancel(context.Background())
-	rch := d.client.Watch(ctx, "/service", clientv3.WithPrefix())
+
+	log.Infof("start watch %s ...", svcName)
+	rch := d.client.Watch(ctx, serviceid.ServiceKeyPrefix+"/"+svcName, clientv3.WithPrefix())
+	log.Infof("watch %s succeed !", svcName)
 
 	go func() {
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
-				log.Infof("%s %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+				//log.Infof("%s %q : %q\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
 
 				switch ev.Type {
 				case 0:
@@ -146,9 +157,9 @@ func (d *discoveryEtcd) updateSvcCache(desc *discovery.ServiceDesc) {
 
 	//通知服务发现变化
 	d.notifyGuard.RLock()
-	callback := d.notifyCallback
+	callback, ok := d.notifyCallbacks[desc.Name]
 	d.notifyGuard.RUnlock()
-	if callback != nil {
+	if callback != nil && ok {
 		callback(discovery.PUT, desc)
 	}
 }
@@ -180,11 +191,10 @@ func NewDiscovery(addrs []string) discovery.Discovery {
 	}
 
 	disc := &discoveryEtcd{
-		client:   cli,
-		svcCache: make(map[string][]*discovery.ServiceDesc),
+		client:          cli,
+		svcCache:        make(map[string][]*discovery.ServiceDesc),
+		notifyCallbacks: make(map[string]discovery.NotifyFunc),
 	}
-
-	disc.startWatch()
 
 	return disc
 }

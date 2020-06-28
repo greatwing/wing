@@ -61,6 +61,7 @@ func StopAllService() {
 	for i := len(localServices) - 1; i >= 0; i-- {
 		svc := localServices[i]
 		svc.Stop()
+		Unregister(svc) //注销service
 	}
 
 	//stop discovery

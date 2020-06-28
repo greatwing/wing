@@ -4,6 +4,7 @@ import (
 	"github.com/davyxu/cellnet"
 	"github.com/davyxu/cellnet/util"
 	"github.com/greatwing/wing/base/config"
+	"github.com/greatwing/wing/base/log"
 	"github.com/greatwing/wing/base/service/discovery"
 	"github.com/greatwing/wing/base/service/serviceid"
 	"strconv"
@@ -45,15 +46,21 @@ func Register(p cellnet.Peer, options ...interface{}) *discovery.ServiceDesc {
 		sd.SetMeta("WANAddress", util.JoinAddress(config.GetWANIP(), sd.Port))
 	}
 
-	log.SetColor("green").Debugf("service '%s' listen at port: %d", sd.ID, sd.Port)
+	log.Debugf("service '%s' listen at port: %d", sd.ID, sd.Port)
 
 	p.(cellnet.ContextSet).SetContext("sd", sd)
 
 	// 有同名的要先解除注册，再注册，防止watch不触发
-	discovery.Default.Deregister(sd.ID)
-	err := discovery.Default.Register(sd)
-	if err != nil {
-		log.Errorf("service register failed, %s %s", sd.String(), err.Error())
+	//discovery.Default.Deregister(sd.ID)
+
+	//注册失败时需要重试
+	for {
+		err := discovery.Default.Register(sd)
+		if err != nil {
+			log.Errorf("service register failed, %s %s", sd.String(), err.Error())
+		} else {
+			break
+		}
 	}
 
 	return sd
@@ -61,6 +68,9 @@ func Register(p cellnet.Peer, options ...interface{}) *discovery.ServiceDesc {
 
 // 解除peer注册
 func Unregister(p cellnet.Peer) {
-	//property := p.(cellnet.PeerProperty)
-	//discovery.Default.Deregister(MakeLocalSvcID(property.Name()))
+	if property, ok := p.(cellnet.PeerProperty); ok {
+		id := serviceid.MakeLocalSvcID(property.Name())
+		log.Debugf("Unregister %s", id)
+		discovery.Default.Deregister(id)
+	}
 }

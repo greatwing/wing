@@ -5,22 +5,22 @@ import (
 )
 
 const (
-	serviceKeyPrefix = "/service"
+	ServiceKeyPrefix = "/service"
 )
 
 func GetServiceKey(svcId string) string {
-	return serviceKeyPrefix + svcId
+	return ServiceKeyPrefix + svcId
 }
 
 func IsServiceKey(rawkey string) bool {
 
-	return strings.HasPrefix(rawkey, serviceKeyPrefix)
+	return strings.HasPrefix(rawkey, ServiceKeyPrefix)
 }
 
 func GetSvcIDByServiceKey(rawkey string) string {
 
 	if IsServiceKey(rawkey) {
-		return rawkey[len(serviceKeyPrefix):]
+		return rawkey[len(ServiceKeyPrefix):]
 	}
 
 	return ""

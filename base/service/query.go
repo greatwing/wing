@@ -2,37 +2,28 @@ package service
 
 import (
 	"github.com/davyxu/cellnet"
+	"github.com/greatwing/wing/base/log"
 	"github.com/greatwing/wing/base/service/discovery"
+	"github.com/greatwing/wing/base/utils"
 )
 
 type FilterFunc func(*discovery.ServiceDesc) bool
 type QueryServiceOp int
 type QueryResult interface{}
 
-const (
-	QueryServiceOp_NextFilter QueryServiceOp = iota
-	QueryServiceOp_NextDesc
-	QueryServiceOp_End
-)
-
-type DiscoveryOption struct {
-	//Rules         []MatchRule
-	MaxCount      int    // 连接数，默认发起多条连接
-	MatchSvcGroup string // 空时，匹配所有同类服务，否则找指定组的服务
-}
-
 // 发现一个服务，服务可能拥有多个地址，每个地址返回时，创建一个connector并开启
 // DiscoveryService返回值返回持有多个Peer的peer, 判断Peer的IsReady可以得到所有连接准备好的状态
-func DiscoveryService(tgtSvcName string, opt DiscoveryOption, peerCreator func(MultiPeer, *discovery.ServiceDesc)) cellnet.Peer {
+func DiscoveryService(tgtSvcName string, maxCount int,
+	peerCreator func(MultiPeer, *discovery.ServiceDesc), filters ...FilterFunc) MultiPeer {
 
 	// 从发现到连接有一个过程，需要用Map防止还没连上，又创建一个新的连接
 	multiPeer := newMultiPeer()
 
-	discovery.Default.RegisterNotify(func(op discovery.OperateType, data interface{}) {
+	discovery.Default.Watch(tgtSvcName, func(op discovery.OperateType, data interface{}) {
 		switch op {
 		case discovery.PUT:
-			if desc, ok := data.(*discovery.ServiceDesc); ok {
-				if Filter(desc, FilterMatchSvcGroup(opt.MatchSvcGroup)) {
+			if desc, ok := data.(*discovery.ServiceDesc); ok && desc.Name == tgtSvcName {
+				if Filter(desc, filters...) {
 
 					log.Infof("found '%s' address '%s' ", desc.Name, desc.Address())
 
@@ -60,7 +51,7 @@ func DiscoveryService(tgtSvcName string, opt DiscoveryOption, peerCreator func(M
 					}
 
 					// 达到最大连接
-					if opt.MaxCount > 0 && len(multiPeer.GetPeers()) >= opt.MaxCount {
+					if maxCount > 0 && len(multiPeer.GetPeers()) >= maxCount {
 						return
 					}
 
@@ -115,19 +106,18 @@ func FilterMatchSvcID(svcid string) FilterFunc {
 	}
 }
 
-//// 匹配指定的规则,一般由命令行指定
-//func FilterMatchRule(rules []MatchRule) FilterFunc {
-//
-//	return func(desc *discovery.ServiceDesc) interface{} {
-//
-//		// 任意规则满足即可
-//		for _, rule := range rules {
-//
-//			if matchTarget(&rule, desc) {
-//				return true
-//			}
-//		}
-//
-//		return false
-//	}
-//}
+// 匹配指定的规则,一般由命令行指定
+func FilterMatchRule(rules []string) FilterFunc {
+
+	return func(desc *discovery.ServiceDesc) bool {
+
+		// 任意规则满足即可
+		for _, rule := range rules {
+			if utils.WildcardPatternMatch(desc.ID, rule) {
+				return true
+			}
+		}
+
+		return false
+	}
+}

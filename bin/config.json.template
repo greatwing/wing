@@ -1,0 +1,8 @@
+{
+    "svc_group": "dev",
+    "svc_index": 0,
+    "wan_ip": "192.168.0.195",
+    "discovery_addr": [
+        "127.0.0.1:2379"
+    ]
+}
