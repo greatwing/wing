@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/davyxu/cellnet"
 	"github.com/davyxu/cellnet/codec"
+	"github.com/greatwing/wing/base/config"
 	"github.com/greatwing/wing/base/log"
-	"github.com/greatwing/wing/base/service/serviceid"
+	"github.com/greatwing/wing/base/service/discovery/location"
 	"github.com/greatwing/wing/proto"
 	"github.com/greatwing/wing/server/gateway/route"
+	"github.com/greatwing/wing/server/login/token"
 	"time"
 )
 
@@ -19,34 +21,38 @@ func ProcFrontendPacket(msgID int, msgData []byte, ses cellnet.Session) (msg int
 		// 将字节数组和消息ID用户解出消息
 		msg, _, err = codec.DecodeMessage(msgID, msgData)
 		if err != nil {
-			// TODO 接收错误时，返回消息
 			return nil, err
 		}
 
 		if req, ok := msg.(*proto.Msg_LoginReq); ok {
 			//todo 验证用户token
-			log.Info("login uid: %s", req.Uid)
+			err = token.Verify(req.Uid, req.Token)
+			if err == nil {
+				logger.Infof("login succeed uid: %s", req.Uid)
+			} else {
+				ses.Close()
+				logger.Infof("login failed uid: %s, err: %s", req.Uid, err)
+				return
+			}
 
-			//todo 选取game
-			gameSvcId := "/game/dev/0"
-
+			//选取game
+			gameSvcId := location.GetUserLocation(req.Uid)
 			u, err := bindClientToBackend(gameSvcId, ses.ID())
 			if err == nil {
 				u.TransmitToBackend(gameSvcId, msgID, msgData)
-
 			} else {
 				ses.Close()
-				log.Error("bindClientToBackend", err)
+				logger.Error("bindClientToBackend", err)
 			}
 		} else {
 			return nil, errors.New("LoginReq decode error")
 		}
 
 	case int(proto.Ptl_Ping):
-		u := SessionToUser(ses)
+		u := SessionToClient(ses)
 		if u != nil {
 			u.LastPingTime = time.Now()
-			ses.Send(&proto.Msg_Ping{})
+			//ses.Send(&proto.Msg_Ping{})
 		} else {
 			ses.Close()
 		}
@@ -58,11 +64,12 @@ func ProcFrontendPacket(msgID int, msgData []byte, ses cellnet.Session) (msg int
 		}
 
 		// 找session绑定的user
-		u := SessionToUser(ses)
+		u := SessionToClient(ses)
 		if u != nil {
 			// 透传到后台
-			if err = u.TransmitToBackend(rule.SvcName, msgID, msgData); err != nil {
-				log.Warnf("TransmitToBackend %s, msg: '%d' svc: %s", err, msgID, rule.SvcName)
+			svcID := u.GetBackend(rule.SvcName)
+			if err = u.TransmitToBackend(svcID, msgID, msgData); err != nil {
+				logger.Warnf("TransmitToBackend %s, msg: '%d' svc: %s", err, msgID, rule.SvcName)
 			}
 		} else {
 			//找不到user，说明还没有发送LoginReq验证登录，断开连接
@@ -82,12 +89,12 @@ func (FrontendEventHooker) OnInboundEvent(inputEvent cellnet.Event) (outputEvent
 	switch inputEvent.Message().(type) {
 	case *cellnet.SessionClosed:
 		// 通知后台客户端关闭
-		u := SessionToUser(inputEvent.Session())
+		u := SessionToClient(inputEvent.Session())
 		if u != nil {
 			u.BroadcastToBackends(&proto.ClientClosed{
 				ID: proto.ClientID{
 					ID:    inputEvent.Session().ID(),
-					SvcID: serviceid.GetLocalSvcID(),
+					SvcID: config.GetLocalSvcID(),
 				},
 			})
 		}

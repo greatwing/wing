@@ -9,17 +9,24 @@ import (
 	_ "github.com/davyxu/cellnet/proc/http"
 	"github.com/greatwing/wing/base"
 	"github.com/greatwing/wing/base/log"
+	"github.com/greatwing/wing/base/service/balance"
 	"github.com/greatwing/wing/base/service/discovery"
 	"github.com/greatwing/wing/server/login/responce"
+	"github.com/greatwing/wing/server/login/token"
 	"net/http"
 	"time"
 )
+
+//var redisOp cellnet.RedisPoolOperator
+var balancer balance.LoadBalancer
+
+const ReturnGatewayCount = 3
 
 func protectedHandleFunc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				log.Errorf("uri: %s  panic: %s", r.RequestURI, err)
+				logger.Errorf("uri: %s  panic: %s", r.RequestURI, err)
 			}
 		}()
 
@@ -27,41 +34,69 @@ func protectedHandleFunc(next http.Handler) http.Handler {
 	})
 }
 
-func VerifyUser(uid, token string) (newToken string, err error, errCode int) {
+func VerifyUser(uid, tokenStr string) (newToken string, err error, errCode int) {
 	//todo 验证账号
-	if uid == "" || token == "" {
+	if uid == "" || tokenStr == "" {
 		err = errors.New("uid or token is empty")
 		errCode = responce.UidEmpty
 		return
 	}
 
 	errCode = responce.Succeed
-	newToken = token //todo 生成新token，写入redis
+
+	//生成新token
+	newToken, err = token.Generate(uid)
+	if err != nil {
+		errCode = responce.GenTokenFailed
+	}
 	return
 }
 
-func getGatewayAddr() string {
-	ret := discovery.Default.Query("gateway")
+func getGatewayAddr() []string {
+	descArray := discovery.Default.Query("gateway")
 
-	//todo 负载均衡
-	if len(ret) > 0 {
-		return fmt.Sprintf("%s:%d", ret[0].Host, ret[0].Port)
+	//取负载最低的3个网关
+	svcIdArray, err := balancer.LeastConnections(ReturnGatewayCount)
+	if err != nil {
+		if len(descArray) > 0 {
+			return []string{fmt.Sprintf("%s:%d", descArray[0].Host, descArray[0].Port)}
+		} else {
+			return nil
+		}
 	}
-	return ""
+
+	result := make([]string, 0, ReturnGatewayCount)
+
+	//找出网关的ip地址
+	for _, desc := range descArray {
+		for index, svcID := range svcIdArray {
+			if desc.ID == svcID {
+				result = append(result, fmt.Sprintf("%s:%d", desc.Host, desc.Port))
+				svcIdArray = append(svcIdArray[:index], svcIdArray[index+1:]...)
+				break
+			}
+		}
+
+		if len(svcIdArray) == 0 {
+			break
+		}
+	}
+
+	return result
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
 	uid := r.FormValue("uid")
 	token := r.FormValue("token")
-	//log.Infof("uid=%s, token=%s", uid, token)
+	//log.logger.Infof("uid=%s, token=%s", uid, token)
 
 	newToken, err, errCode := VerifyUser(uid, token)
 
 	var result responce.LoginResponce
 	if err == nil {
 		//账号验证成功
-		gatewayAddr := getGatewayAddr() //todo
-		if gatewayAddr == "" {
+		gatewayAddrs := getGatewayAddr()
+		if len(gatewayAddrs) == 0 {
 			//当前没有可用的网关
 			result = responce.LoginResponce{
 				Ret: responce.NoAvailableGateway,
@@ -73,7 +108,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 				User: &responce.LoginData{
 					Uid:         uid,
 					Token:       newToken,
-					GatewayAddr: gatewayAddr,
+					GatewayAddr: gatewayAddrs,
 				},
 			}
 		}
@@ -89,13 +124,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		w.Write(data)
 	} else {
-		log.Errorf("json.Marshal error: %v", err)
+		logger.Errorf("json.Marshal error: %v", err)
 	}
 }
 
 func startHttp() {
 	//启动http服务
-	log.Infof("start http...")
+	logger.Infof("start http...")
 	http.Handle("/login", protectedHandleFunc(http.HandlerFunc(login)))
 	//http.HandleFunc("/login", login)
 	server := &http.Server{
@@ -110,15 +145,12 @@ func main() {
 	base.Init("login")
 
 	//watch网关服务
-	discovery.Default.Watch("gateway", nil)
+	discovery.Default.WatchSvc("gateway", nil)
 
-	//连接redis
-	base.ConnectToRedis("127.0.0.1:6379")
+	balancer = balance.New("gateway")
 
-	//当redis连接成功的时候启动http
-	base.CheckReady(func() {
-		startHttp()
-	})
+	//启动http
+	startHttp()
 
 	base.StartLoop()
 	base.Exit()

@@ -15,7 +15,8 @@ type MultiPeer interface {
 
 	AddPeer(sd *discovery.ServiceDesc, p cellnet.Peer)
 
-	SkipReadyCheck()
+	SetSkipCheck(skip bool)
+	IsSkipCheck() bool
 }
 
 type multiPeer struct {
@@ -26,35 +27,39 @@ type multiPeer struct {
 	skipReadyCheck bool
 }
 
-func (self *multiPeer) Start() cellnet.Peer {
-	return self
+func (m *multiPeer) Start() cellnet.Peer {
+	return m
 }
 
-func (self *multiPeer) Stop() {
+func (m *multiPeer) Stop() {
 
 }
 
-func (self *multiPeer) TypeName() string {
+func (m *multiPeer) TypeName() string {
 	return ""
 }
 
-func (self *multiPeer) GetPeers() []cellnet.Peer {
-	self.peersGuard.RLock()
-	defer self.peersGuard.RUnlock()
+func (m *multiPeer) GetPeers() []cellnet.Peer {
+	m.peersGuard.RLock()
+	defer m.peersGuard.RUnlock()
 
-	return self.peers
+	return m.peers
 }
 
-func (self *multiPeer) SkipReadyCheck() {
-	self.skipReadyCheck = true
+func (m *multiPeer) SetSkipCheck(skip bool) {
+	m.skipReadyCheck = skip
 }
 
-func (self *multiPeer) IsReady() bool {
-	if self.skipReadyCheck {
+func (m *multiPeer) IsSkipCheck() bool {
+	return m.skipReadyCheck
+}
+
+func (m *multiPeer) IsReady() bool {
+	if m.skipReadyCheck {
 		return true
 	}
 
-	peers := self.GetPeers()
+	peers := m.GetPeers()
 
 	if len(peers) == 0 {
 		return false
@@ -70,21 +75,21 @@ func (self *multiPeer) IsReady() bool {
 }
 
 // 保证AddPeer在Peer  Start之前调用, 否则在连接上时因为没有sd,会导致不汇报服务信息
-func (self *multiPeer) AddPeer(sd *discovery.ServiceDesc, p cellnet.Peer) {
+func (m *multiPeer) AddPeer(sd *discovery.ServiceDesc, p cellnet.Peer) {
 
 	contextSet := p.(cellnet.ContextSet)
 	contextSet.SetContext("sd", sd)
 
-	self.peersGuard.Lock()
-	self.peers = append(self.peers, p)
-	self.peersGuard.Unlock()
+	m.peersGuard.Lock()
+	m.peers = append(m.peers, p)
+	m.peersGuard.Unlock()
 }
 
-func (self *multiPeer) GetPeer(svcid string) cellnet.Peer {
-	self.peersGuard.RLock()
-	defer self.peersGuard.RUnlock()
+func (m *multiPeer) GetPeer(svcid string) cellnet.Peer {
+	m.peersGuard.RLock()
+	defer m.peersGuard.RUnlock()
 
-	for _, p := range self.peers {
+	for _, p := range m.peers {
 
 		if getSvcIDByPeer(p) == svcid {
 			return p
@@ -94,13 +99,13 @@ func (self *multiPeer) GetPeer(svcid string) cellnet.Peer {
 	return nil
 }
 
-func (self *multiPeer) RemovePeer(svcid string) {
-	self.peersGuard.Lock()
-	defer self.peersGuard.Unlock()
-	for index, p := range self.peers {
+func (m *multiPeer) RemovePeer(svcid string) {
+	m.peersGuard.Lock()
+	defer m.peersGuard.Unlock()
+	for index, p := range m.peers {
 
 		if getSvcIDByPeer(p) == svcid {
-			self.peers = append(self.peers[:index], self.peers[index+1:]...)
+			m.peers = append(m.peers[:index], m.peers[index+1:]...)
 			break
 		}
 	}

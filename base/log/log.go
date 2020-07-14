@@ -1,4 +1,4 @@
-package log
+package logger
 
 import (
 	"github.com/greatwing/wing/base/config"
@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	logger = zap.NewNop().Sugar()
+	logger *zap.SugaredLogger
 )
 
 // Debug uses fmt.Sprint to construct and log a message.

@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"github.com/davyxu/cellnet"
 	"github.com/davyxu/cellnet/codec"
-	"github.com/davyxu/cellnet/util"
 	"github.com/gorilla/websocket"
+	"github.com/greatwing/wing/base/utils"
 	"io"
 	"net"
 )
@@ -42,7 +42,7 @@ func (directTCPTransmitter) OnRecvMessage(ses cellnet.Session) (msg interface{},
 				var msgData []byte
 
 				// 接收来自客户端的封包
-				msgID, msgData, err = RecvLTVPacketData(reader, opt.MaxPacketSize())
+				msgID, msgData, err = utils.RecvLTVPacketData(reader, opt.MaxPacketSize())
 
 				// 尝试透传到后台或者解析
 				if err == nil {
@@ -82,7 +82,7 @@ func (directTCPTransmitter) OnSendMessage(ses cellnet.Session, msg interface{}) 
 	// 有写超时时，设置超时
 	opt.ApplySocketWriteTimeout(writer.(net.Conn), func() {
 
-		err = util.SendLTVPacket(writer, ses.(cellnet.ContextSet), msg)
+		err = utils.SendLTVPacket(writer, ses.(cellnet.ContextSet), msg)
 
 	})
 

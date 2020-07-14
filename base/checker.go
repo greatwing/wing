@@ -62,16 +62,16 @@ func LocalServiceStatus() string {
 
 		if pg, ok := svc.(service.MultiPeer); ok {
 
-			// 没有连接发现时
-			if len(pg.GetPeers()) == 0 {
-				if !pg.(cellnet.PeerReadyChecker).IsReady() {
+			if !pg.IsSkipCheck() {
+				// 没有连接发现时
+				if len(pg.GetPeers()) == 0 {
 					sb.WriteString(MultiPeerString(pg))
 					sb.WriteString("\n")
-				}
-			} else {
-				for _, p := range pg.GetPeers() {
-					sb.WriteString(getPeerStatus(p))
-					sb.WriteString("\n")
+				} else {
+					for _, p := range pg.GetPeers() {
+						sb.WriteString(getPeerStatus(p))
+						sb.WriteString("\n")
+					}
 				}
 			}
 
@@ -100,14 +100,15 @@ func IsAllReady() (ret bool) {
 	return
 }
 
-//检查所有的peer是否都处于ready状态，阻塞
+//等待所有的peer都处于ready状态，阻塞
 func WaitReady() {
+	time.Sleep(time.Millisecond * 200)
 
 	var lastStatus string
 	for {
 
 		if IsAllReady() {
-			log.Infof("All peers ready!\n%s", LocalServiceStatus())
+			logger.Infof("All peers ready!\n%s", LocalServiceStatus())
 
 			break
 		}
@@ -115,21 +116,20 @@ func WaitReady() {
 		thisStatus := LocalServiceStatus()
 
 		if lastStatus != thisStatus {
-			log.Infof("peers not all ready\n%s", thisStatus)
+			logger.Infof("peers not all ready\n%s", thisStatus)
 			lastStatus = thisStatus
 		}
 
-		time.Sleep(time.Second * 3) //过3秒再检测
+		time.Sleep(time.Second * 2) //过2秒再检测
 	}
 }
 
 //检查所有的peer是否都处于ready状态，非阻塞
 func CheckReady(onReady func()) {
 	go func() {
-		time.Sleep(time.Millisecond * 200)
 		WaitReady()
 		if onReady != nil {
-			cellnet.QueuedCall(Queue, onReady)
+			RunInLogicGoroutine(onReady)
 		}
 	}()
 }

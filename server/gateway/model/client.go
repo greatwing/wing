@@ -3,8 +3,8 @@ package model
 import (
 	"errors"
 	"github.com/davyxu/cellnet"
+	"github.com/greatwing/wing/base/config"
 	"github.com/greatwing/wing/base/service"
-	"github.com/greatwing/wing/base/service/serviceid"
 	"github.com/greatwing/wing/proto"
 	"time"
 )
@@ -14,7 +14,7 @@ type Backend struct {
 	SvcID   string // 只保留绑定后台的svcid,即便后台更换session,也无需同步
 }
 
-type User struct {
+type Client struct {
 	ClientSession cellnet.Session
 	Targets       []*Backend
 	LastPingTime  time.Time
@@ -23,7 +23,7 @@ type User struct {
 }
 
 // 广播到这个用户绑定的所有后台
-func (self *User) BroadcastToBackends(msg interface{}) {
+func (self *Client) BroadcastToBackends(msg interface{}) {
 
 	for _, t := range self.Targets {
 
@@ -38,7 +38,7 @@ var (
 	ErrBackendNotFound = errors.New("backend not found")
 )
 
-func (self *User) TransmitToBackend(backendSvcid string, msgID int, msgData []byte) error {
+func (self *Client) TransmitToBackend(backendSvcid string, msgID int, msgData []byte) error {
 
 	backendSes := service.GetRemoteService(backendSvcid)
 
@@ -56,7 +56,7 @@ func (self *User) TransmitToBackend(backendSvcid string, msgID int, msgData []by
 }
 
 // 绑定用户后台
-func (self *User) SetBackend(svcName string, svcID string) {
+func (self *Client) SetBackend(svcName string, svcID string) {
 
 	for _, t := range self.Targets {
 		if t.SvcName == svcName {
@@ -67,7 +67,7 @@ func (self *User) SetBackend(svcName string, svcID string) {
 
 	self.CID = proto.ClientID{
 		ID:    self.ClientSession.ID(),
-		SvcID: serviceid.GetLocalSvcID(),
+		SvcID: config.GetLocalSvcID(),
 	}
 
 	self.Targets = append(self.Targets, &Backend{
@@ -76,7 +76,7 @@ func (self *User) SetBackend(svcName string, svcID string) {
 	})
 }
 
-func (self *User) GetBackend(svcName string) string {
+func (self *Client) GetBackend(svcName string) string {
 
 	for _, t := range self.Targets {
 		if t.SvcName == svcName {
@@ -87,8 +87,8 @@ func (self *User) GetBackend(svcName string) string {
 	return ""
 }
 
-func NewUser(clientSes cellnet.Session) *User {
-	return &User{
+func NewClient(clientSes cellnet.Session) *Client {
+	return &Client{
 		ClientSession: clientSes,
 	}
 }

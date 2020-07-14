@@ -25,8 +25,7 @@ type ClientID struct {
 
 // 服务器切断客户端连接
 type CloseClient struct {
-	ID  []int64
-	All bool
+	ID []int64
 }
 
 // 客户端主公断开连接

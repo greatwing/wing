@@ -19,13 +19,13 @@ func DiscoveryService(tgtSvcName string, maxCount int,
 	// 从发现到连接有一个过程，需要用Map防止还没连上，又创建一个新的连接
 	multiPeer := newMultiPeer()
 
-	discovery.Default.Watch(tgtSvcName, func(op discovery.OperateType, data interface{}) {
+	discovery.Default.WatchSvc(tgtSvcName, func(op discovery.OperateType, desc *discovery.ServiceDesc) {
 		switch op {
 		case discovery.PUT:
-			if desc, ok := data.(*discovery.ServiceDesc); ok && desc.Name == tgtSvcName {
+			if desc != nil && desc.Name == tgtSvcName {
 				if Filter(desc, filters...) {
 
-					log.Infof("found '%s' address '%s' ", desc.Name, desc.Address())
+					logger.Infof("found '%s' address '%s' ", desc.Name, desc.Address())
 
 					prePeer := multiPeer.GetPeer(desc.ID)
 
@@ -35,7 +35,7 @@ func DiscoveryService(tgtSvcName string, maxCount int,
 						var preDesc *discovery.ServiceDesc
 						if prePeer.(cellnet.ContextSet).FetchContext("sd", &preDesc) && !preDesc.Equals(desc) {
 
-							log.Infof("service '%s' change desc, %+v -> %+v...", desc.ID, preDesc, desc)
+							logger.Infof("service '%s' change desc, %+v -> %+v...", desc.ID, preDesc, desc)
 
 							// 移除之前的连接
 							multiPeer.RemovePeer(desc.ID)
@@ -60,7 +60,19 @@ func DiscoveryService(tgtSvcName string, maxCount int,
 				}
 			}
 		case discovery.DELETE:
-			//todo
+			if desc != nil {
+				//已停止的服务不再尝试重连
+				delPeer := multiPeer.GetPeer(desc.ID)
+				if delPeer != nil {
+					logger.Infof("close peer of svcid: %s", desc.ID)
+
+					// 移除连接
+					multiPeer.RemovePeer(desc.ID)
+
+					// 停止重连
+					delPeer.Stop()
+				}
+			}
 		default:
 			panic("[service notify] unkown operation")
 		}

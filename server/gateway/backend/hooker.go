@@ -4,12 +4,9 @@ import (
 	"github.com/davyxu/cellnet"
 	"github.com/davyxu/cellnet/codec"
 	"github.com/davyxu/cellnet/msglog"
-	"github.com/davyxu/cellnet/proc"
-	"github.com/davyxu/cellnet/proc/tcp"
 	"github.com/greatwing/wing/base/config"
 	"github.com/greatwing/wing/base/log"
 	"github.com/greatwing/wing/base/msg/clientmsg"
-	"github.com/greatwing/wing/base/service"
 	"github.com/greatwing/wing/proto"
 	"github.com/greatwing/wing/server/gateway/frontend"
 )
@@ -25,7 +22,7 @@ func (BackendMsgHooker) OnInboundEvent(inputEvent cellnet.Event) (outputEvent ce
 
 		userMsg, _, err := codec.DecodeMessage(int(incomingMsg.MsgID), incomingMsg.MsgData)
 		if err != nil {
-			log.Warnf("Backend msg decode failed, %s, msgid: %d", err.Error(), incomingMsg.MsgID)
+			logger.Warnf("Backend msg decode failed, %s, msgid: %d", err.Error(), incomingMsg.MsgID)
 			return nil
 		}
 
@@ -135,7 +132,7 @@ func writeGatewayLog(ses cellnet.Session, dir string, ack *proto.Transmit) {
 
 	userMsg, _, err := codec.DecodeMessage(int(ack.MsgID), ack.MsgData)
 	if err == nil {
-		log.Debugf("#gateway.%s(%s)@%d len: %d %s <%d>| %s",
+		logger.Debugf("#gateway.%s(%s)@%d len: %d %s <%d>| %s",
 			dir,
 			peerInfo.Name(),
 			ses.ID(),
@@ -146,7 +143,7 @@ func writeGatewayLog(ses cellnet.Session, dir string, ack *proto.Transmit) {
 	} else {
 
 		// 网关没有相关的消息, 只能打出消息号
-		log.Debugf("#gateway.%s(%s)@%d len: %d msgid: %d <%d>",
+		logger.Debugf("#gateway.%s(%s)@%d len: %d msgid: %d <%d>",
 			dir,
 			peerInfo.Name(),
 			ses.ID(),
@@ -155,32 +152,4 @@ func writeGatewayLog(ses cellnet.Session, dir string, ack *proto.Transmit) {
 			ack.ClientID,
 		)
 	}
-}
-
-func init() {
-
-	// 避免默认消息日志显示本条消息
-	msglog.SetMsgLogRule("proto.Transmit", msglog.MsgLogRule_BlackList)
-
-	// 适用于后端服务的处理器
-	proc.RegisterProcessor("svc.backend", func(bundle proc.ProcessorBundle, userCallback cellnet.EventCallback, args ...interface{}) {
-
-		bundle.SetTransmitter(new(tcp.TCPMessageTransmitter))
-		bundle.SetHooker(proc.NewMultiHooker(
-			new(service.SvcEventHooker), // 服务互联处理
-			new(BackendMsgHooker),       // 网关消息处理
-			new(tcp.MsgHooker)))         // tcp基础消息处理
-		bundle.SetCallback(proc.NewQueuedEventCallback(userCallback))
-	})
-
-	//适用于网关和其他后端服务
-	proc.RegisterProcessor("gateway.backend", func(bundle proc.ProcessorBundle, userCallback cellnet.EventCallback, args ...interface{}) {
-
-		bundle.SetTransmitter(new(tcp.TCPMessageTransmitter))
-		bundle.SetHooker(proc.NewMultiHooker(
-			new(service.SvcEventHooker), // 服务互联处理
-			new(broadcasterHooker),      // 网关消息处理
-			new(tcp.MsgHooker)))         // tcp基础消息处理
-		bundle.SetCallback(proc.NewQueuedEventCallback(userCallback))
-	})
 }

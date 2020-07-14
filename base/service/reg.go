@@ -6,7 +6,6 @@ import (
 	"github.com/greatwing/wing/base/config"
 	"github.com/greatwing/wing/base/log"
 	"github.com/greatwing/wing/base/service/discovery"
-	"github.com/greatwing/wing/base/service/serviceid"
 	"strconv"
 )
 
@@ -23,7 +22,7 @@ func Register(p cellnet.Peer, options ...interface{}) *discovery.ServiceDesc {
 	property := p.(cellnet.PeerProperty)
 
 	sd := &discovery.ServiceDesc{
-		ID:   serviceid.MakeLocalSvcID(property.Name()),
+		ID:   config.MakeLocalSvcID(property.Name()),
 		Name: property.Name(),
 		Host: host,
 		Port: p.(peerListener).Port(),
@@ -46,18 +45,17 @@ func Register(p cellnet.Peer, options ...interface{}) *discovery.ServiceDesc {
 		sd.SetMeta("WANAddress", util.JoinAddress(config.GetWANIP(), sd.Port))
 	}
 
-	log.Debugf("service '%s' listen at port: %d", sd.ID, sd.Port)
+	logger.Debugf("service '%s' listen at port: %d", sd.ID, sd.Port)
 
-	p.(cellnet.ContextSet).SetContext("sd", sd)
-
-	// 有同名的要先解除注册，再注册，防止watch不触发
-	//discovery.Default.Deregister(sd.ID)
+	ctx := p.(cellnet.ContextSet)
+	ctx.SetContext("sd", sd)
+	ctx.SetContext("register", struct{}{})
 
 	//注册失败时需要重试
 	for {
 		err := discovery.Default.Register(sd)
 		if err != nil {
-			log.Errorf("service register failed, %s %s", sd.String(), err.Error())
+			logger.Errorf("service register failed, %s %s", sd.String(), err.Error())
 		} else {
 			break
 		}
@@ -68,9 +66,19 @@ func Register(p cellnet.Peer, options ...interface{}) *discovery.ServiceDesc {
 
 // 解除peer注册
 func Unregister(p cellnet.Peer) {
+	ctx, ok := p.(cellnet.ContextSet)
+	if !ok {
+		return
+	}
+
+	if _, ok := ctx.GetContext("register"); !ok {
+		//没注册过
+		return
+	}
+
 	if property, ok := p.(cellnet.PeerProperty); ok {
-		id := serviceid.MakeLocalSvcID(property.Name())
-		log.Debugf("Unregister %s", id)
+		id := config.MakeLocalSvcID(property.Name())
+		logger.Debugf("Unregister %s", id)
 		discovery.Default.Deregister(id)
 	}
 }

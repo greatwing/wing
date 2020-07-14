@@ -16,6 +16,9 @@ func RegisterPbMsgMeta(msgId Ptl, msg interface{}) {
 }
 
 func init() {
+	RegisterPbMsgMeta(Ptl_Ping, (*Msg_Ping)(nil))
 	RegisterPbMsgMeta(Ptl_LoginReq, (*Msg_LoginReq)(nil))
 	RegisterPbMsgMeta(Ptl_LoginRsp, (*Msg_LoginRsp)(nil))
+	RegisterPbMsgMeta(Ptl_CreatRoleReq, (*Msg_CreatRoleReq)(nil))
+	RegisterPbMsgMeta(Ptl_CreatRoleRsp, (*Msg_CreatRoleRsp)(nil))
 }

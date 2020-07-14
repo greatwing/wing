@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,7 +23,11 @@ func walkFunc(path string, info os.FileInfo, err error) error {
 	fileSuffix := filepath.Ext(info.Name())
 	if fileSuffix == ".proto" {
 		fmt.Printf("file: %s\n", path)
-		cmd := exec.Command("protoc", "--gogofaster_out", protoDir, "--proto_path", protoDir, info.Name())
+		cmd := exec.Command("protoc",
+			"--gogofaster_out", protoDir,
+			"--proto_path", protoDir,
+			"--proto_path", filepath.Join(protoDir, "/thirdparty"),
+			info.Name())
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(out), err)
@@ -37,8 +42,12 @@ func walkFunc(path string, info os.FileInfo, err error) error {
 func main() {
 	flag.Parse()
 
-	err := filepath.Walk(protoDir, walkFunc)
+	infos, err := ioutil.ReadDir(protoDir)
+	for _, info := range infos {
+		walkFunc(filepath.Join(protoDir, info.Name()), info, nil)
+	}
+	//err := filepath.Walk(protoDir, walkFunc)
 	if err != nil {
-		fmt.Printf("filepath.Walk() error: %v\n", err)
+		fmt.Print(err)
 	}
 }

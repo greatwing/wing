@@ -28,11 +28,10 @@ type ServiceParameter struct {
 
 // 初始化框架
 func Init(svcName string) {
-	log.Infof("config = %s", config.ToJson())
+	logger.Infof("config = %s", config.ToJson())
 
 	msglog.SetCurrMsgLogMode(msglog.MsgLogMode_BlackList)
-	msglog.SetMsgLogRule("proto.PingACK", msglog.MsgLogRule_BlackList)
-	msglog.SetMsgLogRule("proto.SvcStatusACK", msglog.MsgLogRule_BlackList)
+	msglog.SetMsgLogRule("proto.Msg_Ping", msglog.MsgLogRule_BlackList)
 
 	Queue = cellnet.NewEventQueue()
 	Queue.StartLoop()
@@ -49,8 +48,8 @@ func StartLoop() {
 // 退出处理
 func Exit() {
 	service.StopAllService()
-	log.Sync()
-	log.Rotate()
+	logger.Sync()
+	logger.Rotate()
 }
 
 func Accept(param ServiceParameter) cellnet.Peer {
@@ -69,7 +68,7 @@ func Accept(param ServiceParameter) cellnet.Peer {
 	proc.BindProcessorHandler(p, param.NetProcName, msg.Process)
 
 	if opt, ok := p.(cellnet.TCPSocketOption); ok {
-		opt.SetSocketBuffer(2048, 2048, true)
+		opt.SetSocketBuffer(-1, -1, true)
 	}
 
 	//放入本地记录
@@ -97,7 +96,7 @@ func Connect(param ServiceParameter, filters ...service.FilterFunc) service.Mult
 		proc.BindProcessorHandler(p, param.NetProcName, msg.Process)
 
 		if opt, ok := p.(cellnet.TCPSocketOption); ok {
-			opt.SetSocketBuffer(2048, 2048, true)
+			opt.SetSocketBuffer(-1, -1, true)
 		}
 
 		p.(cellnet.TCPConnector).SetReconnectDuration(time.Second * 3)
@@ -113,8 +112,6 @@ func Connect(param ServiceParameter, filters ...service.FilterFunc) service.Mult
 	return mp
 }
 
-func ConnectToRedis(addr string) {
-	p := peer.NewGenericPeer("redix.Connector", "redis", addr, Queue)
-	p.Start()
-	service.AddLocalService(p)
+func RunInLogicGoroutine(callback func()) {
+	cellnet.QueuedCall(Queue, callback)
 }

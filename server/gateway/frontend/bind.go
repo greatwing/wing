@@ -13,7 +13,7 @@ var (
 )
 
 // 将客户端连接绑定到后台服务
-func bindClientToBackend(backendSvcID string, clientSesID int64) (*model.User, error) {
+func bindClientToBackend(backendSvcID string, clientSesID int64) (*model.Client, error) {
 
 	backendSes := service.GetRemoteService(backendSvcID)
 
@@ -31,14 +31,14 @@ func bindClientToBackend(backendSvcID string, clientSesID int64) (*model.User, e
 	clientSes := GetClientSession(clientSesID)
 
 	// 从客户端的会话取得用户
-	u := SessionToUser(clientSes)
+	u := SessionToClient(clientSes)
 
 	// 已经绑定
 	if u != nil {
 		return nil, ErrAlreadyBind
 	}
 
-	u = CreateUser(clientSes)
+	u = CreateClient(clientSes)
 
 	// 更新绑定后台服务的svcid
 	u.SetBackend(sd.Name, sd.SvcID)

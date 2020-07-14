@@ -7,30 +7,35 @@ import (
 	"github.com/greatwing/wing/base/msg"
 	"github.com/greatwing/wing/base/service"
 	"github.com/greatwing/wing/proto"
-	"reflect"
 )
 
 type MsgCallback func(ev cellnet.Event, cid proto.ClientID)
 type ClosedCallback func(cid proto.ClientID)
 
 //监听客户端消息
-func On(msgId proto.Ptl, callback MsgCallback) {
-	msg.On(int(msgId), handleBackendMessage(callback))
+func OnId(msgId proto.Ptl, callback MsgCallback) {
+	msg.OnId(int(msgId), handleBackendMessage(callback))
 }
-func OnType(msgType reflect.Type, callback MsgCallback) {
-	msg.OnType(msgType, handleBackendMessage(callback))
+func On(message interface{}, callback MsgCallback) {
+	msg.OnType(message, handleBackendMessage(callback))
 }
 
 //监听客户端关闭
 func OnClosed(callback ClosedCallback) {
-	msg.On(proto.Ptl_ClientClosed, handleClosedMessage(callback))
+	msg.OnId(proto.Ptl_ClientClosed, handleClosedMessage(callback))
 }
 
 //通过网关发送消息给客户端
-func Send(session cellnet.Session, cid proto.ClientID, msg interface{}) {
+func Send(cid proto.ClientID, msg interface{}) {
+	session := service.GetRemoteService(cid.SvcID)
+	if session == nil {
+		logger.Infof("session not exist: %s", cid.SvcID)
+		return
+	}
+
 	data, meta, err := codec.EncodeMessage(msg, nil)
 	if err != nil {
-		log.Errorf("EncodeMessage Error: %s", err)
+		logger.Errorf("EncodeMessage Error: %s", err)
 		return
 	}
 

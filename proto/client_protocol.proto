@@ -1,6 +1,8 @@
 syntax = "proto3";  //指定版本
 package proto;
 
+import "gogoproto/gogo.proto";
+
 //协议号
 enum Ptl {
     UNSPECIFIED = 0;
@@ -12,6 +14,31 @@ enum Ptl {
     //登录
     LoginReq = 10001;
     LoginRsp = 10002;
+
+    //创建角色
+    CreatRoleReq = 10003;
+    CreatRoleRsp = 10004;
+}
+
+//性别
+enum Gender {
+    Male = 0;
+    Female = 1;
+}
+
+//角色数据
+message RoleData {
+    string id = 1;
+    string name = 2;
+    Gender gender = 3;
+    repeated ItemData items = 4; //道具
+}
+
+message ItemData {
+    string id = 1 [(gogoproto.moretags) = "bson:\"id,omitempty\""];
+    int32 staticId = 2 [(gogoproto.moretags) = "bson:\"sid,omitempty\""];
+    int32 count = 3 [(gogoproto.moretags) = "bson:\"count,omitempty\""];
+    int32 exp = 4 [(gogoproto.moretags) = "bson:\"exp,omitempty\""];
 }
 
 message Msg_Ping{}
@@ -24,7 +51,23 @@ message Msg_LoginReq {
 message Msg_LoginRsp{
     enum ErrorCode {
         Succeed = 0;
+        Failed = 1; //登录失败
+        NoRole = 2; //没有角色，需要创建
     }
     ErrorCode result = 1;
-    string message = 2; //测试用
+}
+
+//创建角色
+message Msg_CreatRoleReq {
+    string name = 1; //角色姓名
+    Gender gender = 2; //性别
+}
+message Msg_CreatRoleRsp {
+    enum ErrorCode {
+        Succeed = 0;
+        InvalidName = 1; //无效名字(含特殊字符或屏蔽字)
+        DuplicatedName = 2; //名字重复
+        MaxRoleCount = 3; //超过允许创建角色的数量
+    }
+    ErrorCode result = 1;
 }

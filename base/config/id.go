@@ -1,9 +1,8 @@
-package serviceid
+package config
 
 import (
 	"errors"
 	"fmt"
-	"github.com/greatwing/wing/base/config"
 	"strconv"
 	"strings"
 )
@@ -17,12 +16,12 @@ func MakeSvcID(svcName string, svcIndex int, svcGroup string) string {
 
 // 构造指定服务的ID
 func MakeLocalSvcID(svcName string) string {
-	return MakeSvcID(svcName, config.GetSvcIndex(), config.GetSvcGroup())
+	return MakeSvcID(svcName, GetSvcIndex(), GetSvcGroup())
 }
 
 // 获得本进程的服务id
 func GetLocalSvcID() string {
-	return MakeLocalSvcID(config.GetSvcName())
+	return MakeLocalSvcID(GetSvcName())
 }
 
 // 解析服务id

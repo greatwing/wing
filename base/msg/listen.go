@@ -13,10 +13,10 @@ var (
 	listenerCustom sync.Map
 )
 
-type CustomCallback func(param interface{})
+type CustomCallback func(param ...interface{})
 
 //监听消息
-func On(msgId int, callback cellnet.EventCallback) {
+func OnId(msgId int, callback cellnet.EventCallback) {
 	var cbSlice []cellnet.EventCallback
 
 	if data, ok := listenerByID.Load(msgId); ok {
@@ -30,12 +30,13 @@ func On(msgId int, callback cellnet.EventCallback) {
 
 	listenerByID.Store(msgId, cbSlice)
 }
-func OnType(msgType reflect.Type, callback cellnet.EventCallback) {
+func OnType(message interface{}, callback cellnet.EventCallback) {
+	msgType := reflect.TypeOf(message)
 	if msgType.Kind() == reflect.Ptr {
 		msgType = msgType.Elem()
 	}
 	if msgType.Kind() != reflect.Struct {
-		log.Error("the type of msg must be struct")
+		logger.Error("the type of msg must be struct")
 		return
 	}
 
@@ -43,7 +44,7 @@ func OnType(msgType reflect.Type, callback cellnet.EventCallback) {
 	if meta == nil {
 		panic(fmt.Sprintf("cannot find meta by type(%v), need register msg", msgType))
 	}
-	On(meta.ID, callback)
+	OnId(meta.ID, callback)
 }
 
 //停止监听消息
@@ -86,11 +87,11 @@ func OffCustom(key interface{}) {
 }
 
 //
-func FireCustom(key, param interface{}) {
+func FireCustom(key interface{}, param ...interface{}) {
 	if data, ok := listenerCustom.Load(key); ok {
 		cbSlice := data.([]CustomCallback)
 		for _, callback := range cbSlice {
-			callback(param)
+			callback(param...)
 		}
 	}
 }

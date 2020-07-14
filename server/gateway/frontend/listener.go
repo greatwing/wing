@@ -6,7 +6,6 @@ import (
 	"github.com/davyxu/cellnet/proc"
 	"github.com/greatwing/wing/base"
 	"github.com/greatwing/wing/base/service"
-	"time"
 )
 
 func Accept(param base.ServiceParameter) {
@@ -18,10 +17,8 @@ func Accept(param base.ServiceParameter) {
 
 	if socketOpt, ok := clientListener.(cellnet.TCPSocketOption); ok {
 		// 无延迟设置缓冲
-		socketOpt.SetSocketBuffer(2048, 2048, true)
-
-		// 40秒无读，20秒无写断开
-		socketOpt.SetSocketDeadline(time.Second*40, time.Second*20)
+		socketOpt.SetSocketBuffer(-1, -1, true)
+		//socketOpt.SetSocketDeadline(time.Second*40, time.Second*20)
 	}
 
 	clientListener.Start()

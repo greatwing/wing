@@ -5,6 +5,7 @@ package proto
 
 import (
 	fmt "fmt"
+	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"
 	math "math"
@@ -31,6 +32,9 @@ const (
 	//登录
 	Ptl_LoginReq Ptl = 10001
 	Ptl_LoginRsp Ptl = 10002
+	//创建角色
+	Ptl_CreatRoleReq Ptl = 10003
+	Ptl_CreatRoleRsp Ptl = 10004
 )
 
 var Ptl_name = map[int32]string{
@@ -38,13 +42,17 @@ var Ptl_name = map[int32]string{
 	10000: "Ping",
 	10001: "LoginReq",
 	10002: "LoginRsp",
+	10003: "CreatRoleReq",
+	10004: "CreatRoleRsp",
 }
 
 var Ptl_value = map[string]int32{
-	"UNSPECIFIED": 0,
-	"Ping":        10000,
-	"LoginReq":    10001,
-	"LoginRsp":    10002,
+	"UNSPECIFIED":  0,
+	"Ping":         10000,
+	"LoginReq":     10001,
+	"LoginRsp":     10002,
+	"CreatRoleReq": 10003,
+	"CreatRoleRsp": 10004,
 }
 
 func (x Ptl) String() string {
@@ -55,18 +63,50 @@ func (Ptl) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_3ab211d952d9c981, []int{0}
 }
 
+//性别
+type Gender int32
+
+const (
+	Gender_Male   Gender = 0
+	Gender_Female Gender = 1
+)
+
+var Gender_name = map[int32]string{
+	0: "Male",
+	1: "Female",
+}
+
+var Gender_value = map[string]int32{
+	"Male":   0,
+	"Female": 1,
+}
+
+func (x Gender) String() string {
+	return proto.EnumName(Gender_name, int32(x))
+}
+
+func (Gender) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_3ab211d952d9c981, []int{1}
+}
+
 type Msg_LoginRsp_ErrorCode int32
 
 const (
 	Msg_LoginRsp_Succeed Msg_LoginRsp_ErrorCode = 0
+	Msg_LoginRsp_Failed  Msg_LoginRsp_ErrorCode = 1
+	Msg_LoginRsp_NoRole  Msg_LoginRsp_ErrorCode = 2
 )
 
 var Msg_LoginRsp_ErrorCode_name = map[int32]string{
 	0: "Succeed",
+	1: "Failed",
+	2: "NoRole",
 }
 
 var Msg_LoginRsp_ErrorCode_value = map[string]int32{
 	"Succeed": 0,
+	"Failed":  1,
+	"NoRole":  2,
 }
 
 func (x Msg_LoginRsp_ErrorCode) String() string {
@@ -74,7 +114,175 @@ func (x Msg_LoginRsp_ErrorCode) String() string {
 }
 
 func (Msg_LoginRsp_ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_3ab211d952d9c981, []int{2, 0}
+	return fileDescriptor_3ab211d952d9c981, []int{4, 0}
+}
+
+type Msg_CreatRoleRsp_ErrorCode int32
+
+const (
+	Msg_CreatRoleRsp_Succeed        Msg_CreatRoleRsp_ErrorCode = 0
+	Msg_CreatRoleRsp_InvalidName    Msg_CreatRoleRsp_ErrorCode = 1
+	Msg_CreatRoleRsp_DuplicatedName Msg_CreatRoleRsp_ErrorCode = 2
+	Msg_CreatRoleRsp_MaxRoleCount   Msg_CreatRoleRsp_ErrorCode = 3
+)
+
+var Msg_CreatRoleRsp_ErrorCode_name = map[int32]string{
+	0: "Succeed",
+	1: "InvalidName",
+	2: "DuplicatedName",
+	3: "MaxRoleCount",
+}
+
+var Msg_CreatRoleRsp_ErrorCode_value = map[string]int32{
+	"Succeed":        0,
+	"InvalidName":    1,
+	"DuplicatedName": 2,
+	"MaxRoleCount":   3,
+}
+
+func (x Msg_CreatRoleRsp_ErrorCode) String() string {
+	return proto.EnumName(Msg_CreatRoleRsp_ErrorCode_name, int32(x))
+}
+
+func (Msg_CreatRoleRsp_ErrorCode) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_3ab211d952d9c981, []int{6, 0}
+}
+
+//角色数据
+type RoleData struct {
+	Id     string      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name   string      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Gender Gender      `protobuf:"varint,3,opt,name=gender,proto3,enum=proto.Gender" json:"gender,omitempty"`
+	Items  []*ItemData `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
+}
+
+func (m *RoleData) Reset()         { *m = RoleData{} }
+func (m *RoleData) String() string { return proto.CompactTextString(m) }
+func (*RoleData) ProtoMessage()    {}
+func (*RoleData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3ab211d952d9c981, []int{0}
+}
+func (m *RoleData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RoleData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RoleData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RoleData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RoleData.Merge(m, src)
+}
+func (m *RoleData) XXX_Size() int {
+	return m.Size()
+}
+func (m *RoleData) XXX_DiscardUnknown() {
+	xxx_messageInfo_RoleData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RoleData proto.InternalMessageInfo
+
+func (m *RoleData) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *RoleData) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *RoleData) GetGender() Gender {
+	if m != nil {
+		return m.Gender
+	}
+	return Gender_Male
+}
+
+func (m *RoleData) GetItems() []*ItemData {
+	if m != nil {
+		return m.Items
+	}
+	return nil
+}
+
+type ItemData struct {
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"id,omitempty"`
+	StaticId int32  `protobuf:"varint,2,opt,name=staticId,proto3" json:"staticId,omitempty" bson:"sid,omitempty"`
+	Count    int32  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty" bson:"count,omitempty"`
+	Exp      int32  `protobuf:"varint,4,opt,name=exp,proto3" json:"exp,omitempty" bson:"exp,omitempty"`
+}
+
+func (m *ItemData) Reset()         { *m = ItemData{} }
+func (m *ItemData) String() string { return proto.CompactTextString(m) }
+func (*ItemData) ProtoMessage()    {}
+func (*ItemData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3ab211d952d9c981, []int{1}
+}
+func (m *ItemData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ItemData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ItemData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ItemData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ItemData.Merge(m, src)
+}
+func (m *ItemData) XXX_Size() int {
+	return m.Size()
+}
+func (m *ItemData) XXX_DiscardUnknown() {
+	xxx_messageInfo_ItemData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ItemData proto.InternalMessageInfo
+
+func (m *ItemData) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ItemData) GetStaticId() int32 {
+	if m != nil {
+		return m.StaticId
+	}
+	return 0
+}
+
+func (m *ItemData) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+func (m *ItemData) GetExp() int32 {
+	if m != nil {
+		return m.Exp
+	}
+	return 0
 }
 
 type Msg_Ping struct {
@@ -84,7 +292,7 @@ func (m *Msg_Ping) Reset()         { *m = Msg_Ping{} }
 func (m *Msg_Ping) String() string { return proto.CompactTextString(m) }
 func (*Msg_Ping) ProtoMessage()    {}
 func (*Msg_Ping) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3ab211d952d9c981, []int{0}
+	return fileDescriptor_3ab211d952d9c981, []int{2}
 }
 func (m *Msg_Ping) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -123,7 +331,7 @@ func (m *Msg_LoginReq) Reset()         { *m = Msg_LoginReq{} }
 func (m *Msg_LoginReq) String() string { return proto.CompactTextString(m) }
 func (*Msg_LoginReq) ProtoMessage()    {}
 func (*Msg_LoginReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3ab211d952d9c981, []int{1}
+	return fileDescriptor_3ab211d952d9c981, []int{3}
 }
 func (m *Msg_LoginReq) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -167,15 +375,14 @@ func (m *Msg_LoginReq) GetToken() string {
 }
 
 type Msg_LoginRsp struct {
-	Result  Msg_LoginRsp_ErrorCode `protobuf:"varint,1,opt,name=result,proto3,enum=proto.Msg_LoginRsp_ErrorCode" json:"result,omitempty"`
-	Message string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Result Msg_LoginRsp_ErrorCode `protobuf:"varint,1,opt,name=result,proto3,enum=proto.Msg_LoginRsp_ErrorCode" json:"result,omitempty"`
 }
 
 func (m *Msg_LoginRsp) Reset()         { *m = Msg_LoginRsp{} }
 func (m *Msg_LoginRsp) String() string { return proto.CompactTextString(m) }
 func (*Msg_LoginRsp) ProtoMessage()    {}
 func (*Msg_LoginRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3ab211d952d9c981, []int{2}
+	return fileDescriptor_3ab211d952d9c981, []int{4}
 }
 func (m *Msg_LoginRsp) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -211,43 +418,259 @@ func (m *Msg_LoginRsp) GetResult() Msg_LoginRsp_ErrorCode {
 	return Msg_LoginRsp_Succeed
 }
 
-func (m *Msg_LoginRsp) GetMessage() string {
+//创建角色
+type Msg_CreatRoleReq struct {
+	Name   string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Gender Gender `protobuf:"varint,2,opt,name=gender,proto3,enum=proto.Gender" json:"gender,omitempty"`
+}
+
+func (m *Msg_CreatRoleReq) Reset()         { *m = Msg_CreatRoleReq{} }
+func (m *Msg_CreatRoleReq) String() string { return proto.CompactTextString(m) }
+func (*Msg_CreatRoleReq) ProtoMessage()    {}
+func (*Msg_CreatRoleReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3ab211d952d9c981, []int{5}
+}
+func (m *Msg_CreatRoleReq) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Msg_CreatRoleReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Msg_CreatRoleReq.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Msg_CreatRoleReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Msg_CreatRoleReq.Merge(m, src)
+}
+func (m *Msg_CreatRoleReq) XXX_Size() int {
+	return m.Size()
+}
+func (m *Msg_CreatRoleReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_Msg_CreatRoleReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Msg_CreatRoleReq proto.InternalMessageInfo
+
+func (m *Msg_CreatRoleReq) GetName() string {
 	if m != nil {
-		return m.Message
+		return m.Name
 	}
 	return ""
 }
 
+func (m *Msg_CreatRoleReq) GetGender() Gender {
+	if m != nil {
+		return m.Gender
+	}
+	return Gender_Male
+}
+
+type Msg_CreatRoleRsp struct {
+	Result Msg_CreatRoleRsp_ErrorCode `protobuf:"varint,1,opt,name=result,proto3,enum=proto.Msg_CreatRoleRsp_ErrorCode" json:"result,omitempty"`
+}
+
+func (m *Msg_CreatRoleRsp) Reset()         { *m = Msg_CreatRoleRsp{} }
+func (m *Msg_CreatRoleRsp) String() string { return proto.CompactTextString(m) }
+func (*Msg_CreatRoleRsp) ProtoMessage()    {}
+func (*Msg_CreatRoleRsp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3ab211d952d9c981, []int{6}
+}
+func (m *Msg_CreatRoleRsp) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Msg_CreatRoleRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Msg_CreatRoleRsp.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Msg_CreatRoleRsp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Msg_CreatRoleRsp.Merge(m, src)
+}
+func (m *Msg_CreatRoleRsp) XXX_Size() int {
+	return m.Size()
+}
+func (m *Msg_CreatRoleRsp) XXX_DiscardUnknown() {
+	xxx_messageInfo_Msg_CreatRoleRsp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Msg_CreatRoleRsp proto.InternalMessageInfo
+
+func (m *Msg_CreatRoleRsp) GetResult() Msg_CreatRoleRsp_ErrorCode {
+	if m != nil {
+		return m.Result
+	}
+	return Msg_CreatRoleRsp_Succeed
+}
+
 func init() {
 	proto.RegisterEnum("proto.Ptl", Ptl_name, Ptl_value)
+	proto.RegisterEnum("proto.Gender", Gender_name, Gender_value)
 	proto.RegisterEnum("proto.Msg_LoginRsp_ErrorCode", Msg_LoginRsp_ErrorCode_name, Msg_LoginRsp_ErrorCode_value)
+	proto.RegisterEnum("proto.Msg_CreatRoleRsp_ErrorCode", Msg_CreatRoleRsp_ErrorCode_name, Msg_CreatRoleRsp_ErrorCode_value)
+	proto.RegisterType((*RoleData)(nil), "proto.RoleData")
+	proto.RegisterType((*ItemData)(nil), "proto.ItemData")
 	proto.RegisterType((*Msg_Ping)(nil), "proto.Msg_Ping")
 	proto.RegisterType((*Msg_LoginReq)(nil), "proto.Msg_LoginReq")
 	proto.RegisterType((*Msg_LoginRsp)(nil), "proto.Msg_LoginRsp")
+	proto.RegisterType((*Msg_CreatRoleReq)(nil), "proto.Msg_CreatRoleReq")
+	proto.RegisterType((*Msg_CreatRoleRsp)(nil), "proto.Msg_CreatRoleRsp")
 }
 
 func init() { proto.RegisterFile("client_protocol.proto", fileDescriptor_3ab211d952d9c981) }
 
 var fileDescriptor_3ab211d952d9c981 = []byte{
-	// 278 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x4d, 0xce, 0xc9, 0x4c,
-	0xcd, 0x2b, 0x89, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0xce, 0xcf, 0xd1, 0x03, 0x33, 0x84, 0x58,
-	0xc1, 0x94, 0x12, 0x17, 0x17, 0x87, 0x6f, 0x71, 0x7a, 0x7c, 0x40, 0x66, 0x5e, 0xba, 0x92, 0x19,
-	0x17, 0x0f, 0x88, 0xed, 0x93, 0x9f, 0x9e, 0x99, 0x17, 0x94, 0x5a, 0x28, 0x24, 0xc0, 0xc5, 0x5c,
-	0x9a, 0x99, 0x22, 0xc1, 0xa8, 0xc0, 0xa8, 0xc1, 0x19, 0x04, 0x62, 0x0a, 0x89, 0x70, 0xb1, 0x96,
-	0xe4, 0x67, 0xa7, 0xe6, 0x49, 0x30, 0x81, 0xc5, 0x20, 0x1c, 0xa5, 0x4a, 0x64, 0x7d, 0xc5, 0x05,
-	0x42, 0xa6, 0x5c, 0x6c, 0x45, 0xa9, 0xc5, 0xa5, 0x39, 0x25, 0x60, 0xad, 0x7c, 0x46, 0xb2, 0x10,
-	0x2b, 0xf5, 0x90, 0x15, 0xe9, 0xb9, 0x16, 0x15, 0xe5, 0x17, 0x39, 0xe7, 0xa7, 0xa4, 0x06, 0x41,
-	0x15, 0x0b, 0x49, 0x70, 0xb1, 0xe7, 0xa6, 0x16, 0x17, 0x27, 0xa6, 0xa7, 0x42, 0x8d, 0x87, 0x71,
-	0x95, 0x24, 0xb8, 0x38, 0xe1, 0xca, 0x85, 0xb8, 0xb9, 0xd8, 0x83, 0x4b, 0x93, 0x93, 0x53, 0x53,
-	0x53, 0x04, 0x18, 0xb4, 0x82, 0xb8, 0x98, 0x03, 0x4a, 0x72, 0x84, 0xf8, 0xb9, 0xb8, 0x43, 0xfd,
-	0x82, 0x03, 0x5c, 0x9d, 0x3d, 0xdd, 0x3c, 0x5d, 0x5d, 0x04, 0x18, 0x84, 0x38, 0xb9, 0x58, 0x40,
-	0x5e, 0x12, 0x98, 0xe0, 0x27, 0xc4, 0xcb, 0xc5, 0x01, 0xf3, 0x91, 0xc0, 0x44, 0x24, 0x6e, 0x71,
-	0x81, 0xc0, 0x24, 0x3f, 0x25, 0x56, 0x0e, 0x46, 0x81, 0x7e, 0x3f, 0x25, 0x2e, 0x8e, 0x86, 0x06,
-	0x16, 0x81, 0xff, 0xff, 0xff, 0xff, 0x67, 0x77, 0x92, 0x38, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23,
-	0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x27, 0x3c, 0x96, 0x63, 0xb8, 0xf0, 0x58, 0x8e, 0xe1, 0xc6,
-	0x63, 0x39, 0x86, 0x24, 0x36, 0xb0, 0x3f, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x83, 0x96,
-	0xdb, 0x16, 0x53, 0x01, 0x00, 0x00,
+	// 579 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x51, 0xdd, 0x4e, 0xd4, 0x4e,
+	0x1c, 0xdd, 0xe9, 0xc7, 0x52, 0x7e, 0xc0, 0x32, 0xff, 0xf9, 0xa3, 0x36, 0x24, 0x16, 0x9c, 0x84,
+	0x48, 0x88, 0x41, 0x82, 0x1f, 0x89, 0x5e, 0xee, 0x02, 0x66, 0x13, 0xb7, 0x92, 0x12, 0xaf, 0x49,
+	0x69, 0x27, 0x4d, 0x63, 0xdb, 0xa9, 0xed, 0xac, 0xae, 0x89, 0x17, 0xbc, 0x81, 0xf8, 0x71, 0xed,
+	0xeb, 0xe8, 0x25, 0x97, 0x5e, 0x11, 0x03, 0x6f, 0xc0, 0x0b, 0xac, 0x99, 0x69, 0x59, 0xeb, 0x06,
+	0xbd, 0xea, 0xe9, 0x99, 0xf3, 0xfb, 0x3a, 0x07, 0x6e, 0x04, 0x49, 0xcc, 0x32, 0x71, 0x98, 0x17,
+	0x5c, 0xf0, 0x80, 0x27, 0x9b, 0x0a, 0x10, 0x53, 0x7d, 0x96, 0x97, 0x22, 0x1e, 0x71, 0x05, 0xef,
+	0x4b, 0x54, 0x3d, 0xd2, 0xf7, 0x60, 0x79, 0x3c, 0x61, 0x3b, 0xbe, 0xf0, 0x49, 0x07, 0xb4, 0x38,
+	0xb4, 0xd1, 0x2a, 0x5a, 0x9f, 0xf5, 0xb4, 0x38, 0x24, 0x04, 0x8c, 0xcc, 0x4f, 0x99, 0xad, 0x29,
+	0x46, 0x61, 0xb2, 0x06, 0xed, 0x88, 0x65, 0x21, 0x2b, 0x6c, 0x7d, 0x15, 0xad, 0x77, 0xb6, 0x17,
+	0xaa, 0x3e, 0x9b, 0xcf, 0x14, 0xe9, 0xd5, 0x8f, 0x64, 0x0d, 0xcc, 0x58, 0xb0, 0xb4, 0xb4, 0x8d,
+	0x55, 0x7d, 0x7d, 0x6e, 0x7b, 0xb1, 0x56, 0xf5, 0x05, 0x4b, 0xe5, 0x28, 0xaf, 0x7a, 0xa5, 0xdf,
+	0x10, 0x58, 0x57, 0x1c, 0xb9, 0xfb, 0x7b, 0x7c, 0xf7, 0xd6, 0xe5, 0xd9, 0xca, 0xff, 0x47, 0x25,
+	0xcf, 0x9e, 0xd2, 0x38, 0xbc, 0xc7, 0x53, 0x29, 0xcf, 0xc5, 0x3b, 0xaa, 0xf6, 0x7a, 0x08, 0x56,
+	0x29, 0x7c, 0x11, 0x07, 0xfd, 0x50, 0xed, 0x66, 0x76, 0xed, 0xcb, 0xb3, 0x95, 0xa5, 0x4a, 0x5e,
+	0xfe, 0xa9, 0x9f, 0x28, 0xc9, 0x16, 0x98, 0x01, 0x1f, 0x66, 0x42, 0x2d, 0x6e, 0x76, 0x97, 0x2f,
+	0xcf, 0x56, 0x6e, 0x56, 0x25, 0x8a, 0x6e, 0x16, 0x55, 0x42, 0xb2, 0x01, 0x3a, 0x1b, 0xe5, 0xb6,
+	0x31, 0x3d, 0x82, 0x8d, 0xf2, 0xa6, 0x5a, 0x8a, 0x28, 0x80, 0x35, 0x28, 0xa3, 0xc3, 0xfd, 0x38,
+	0x8b, 0xe8, 0x63, 0x98, 0x97, 0xf8, 0x39, 0x8f, 0xe2, 0xcc, 0x63, 0xaf, 0x09, 0x06, 0x7d, 0x38,
+	0x31, 0x56, 0x42, 0xb2, 0x04, 0xa6, 0xe0, 0xaf, 0x58, 0x56, 0x5b, 0x5b, 0xfd, 0xd0, 0xb7, 0xcd,
+	0xba, 0x32, 0x27, 0x8f, 0xa0, 0x5d, 0xb0, 0x72, 0x98, 0x08, 0x55, 0xda, 0xd9, 0xbe, 0x5d, 0xbb,
+	0xd8, 0x14, 0x6d, 0xee, 0x16, 0x05, 0x2f, 0x7a, 0x3c, 0x64, 0x5e, 0x2d, 0xa6, 0x5b, 0x30, 0x3b,
+	0x21, 0xc9, 0x1c, 0xcc, 0x1c, 0x0c, 0x83, 0x80, 0xb1, 0x10, 0xb7, 0x08, 0x40, 0x7b, 0xcf, 0x8f,
+	0x13, 0x16, 0x62, 0x24, 0xb1, 0xcb, 0x65, 0xf4, 0x58, 0xa3, 0x03, 0xc0, 0xb2, 0x67, 0xaf, 0x60,
+	0xbe, 0x90, 0x94, 0x5c, 0xfa, 0x2a, 0x7c, 0x74, 0x6d, 0xf8, 0xda, 0x3f, 0xc2, 0xa7, 0x5f, 0xd1,
+	0x74, 0xbf, 0x32, 0x27, 0x4f, 0xa6, 0x8e, 0xb9, 0xd3, 0x38, 0xa6, 0x29, 0xbc, 0xe6, 0xa0, 0x17,
+	0x7f, 0x3d, 0x68, 0x11, 0xe6, 0xfa, 0xd9, 0x1b, 0x3f, 0x89, 0x43, 0xd7, 0x4f, 0x19, 0x46, 0x84,
+	0x40, 0x67, 0x67, 0x98, 0x27, 0x71, 0xe0, 0x0b, 0x56, 0x71, 0x1a, 0xc1, 0x30, 0x3f, 0xf0, 0x47,
+	0xb2, 0x7d, 0x4f, 0xc6, 0x8a, 0xf5, 0x8d, 0x11, 0xe8, 0xfb, 0x22, 0x91, 0xd5, 0x2f, 0xdd, 0x83,
+	0xfd, 0xdd, 0x5e, 0x7f, 0xaf, 0xbf, 0xbb, 0x83, 0x5b, 0x64, 0x16, 0x0c, 0x19, 0x20, 0x3e, 0x71,
+	0xc9, 0x02, 0x58, 0x57, 0xf9, 0xe1, 0x8f, 0x8d, 0xdf, 0x32, 0xc7, 0x9f, 0x5c, 0xf2, 0x1f, 0xcc,
+	0x37, 0xcd, 0xc2, 0x9f, 0xa7, 0xa8, 0x32, 0xc7, 0x5f, 0x5c, 0x6a, 0x5a, 0x08, 0x7f, 0x70, 0x29,
+	0x58, 0xc7, 0xc7, 0x06, 0x1e, 0x8f, 0xc7, 0xe3, 0x99, 0x0d, 0x07, 0xda, 0x95, 0x59, 0xc4, 0x02,
+	0x63, 0xe0, 0x27, 0xac, 0x4e, 0x85, 0xa5, 0x12, 0xa3, 0xae, 0xfd, 0xfd, 0xdc, 0x41, 0xa7, 0xe7,
+	0x0e, 0xfa, 0x79, 0xee, 0xa0, 0x93, 0x0b, 0xa7, 0x75, 0x7a, 0xe1, 0xb4, 0x7e, 0x5c, 0x38, 0xad,
+	0xa3, 0xb6, 0xb2, 0xeb, 0xc1, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x8e, 0x87, 0xd6, 0x5c, 0xe5,
+	0x03, 0x00, 0x00,
+}
+
+func (m *RoleData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RoleData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RoleData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Items) > 0 {
+		for iNdEx := len(m.Items) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Items[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintClientProtocol(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if m.Gender != 0 {
+		i = encodeVarintClientProtocol(dAtA, i, uint64(m.Gender))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintClientProtocol(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintClientProtocol(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ItemData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ItemData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ItemData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Exp != 0 {
+		i = encodeVarintClientProtocol(dAtA, i, uint64(m.Exp))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Count != 0 {
+		i = encodeVarintClientProtocol(dAtA, i, uint64(m.Count))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.StaticId != 0 {
+		i = encodeVarintClientProtocol(dAtA, i, uint64(m.StaticId))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintClientProtocol(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *Msg_Ping) Marshal() (dAtA []byte, err error) {
@@ -330,13 +753,69 @@ func (m *Msg_LoginRsp) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Message) > 0 {
-		i -= len(m.Message)
-		copy(dAtA[i:], m.Message)
-		i = encodeVarintClientProtocol(dAtA, i, uint64(len(m.Message)))
+	if m.Result != 0 {
+		i = encodeVarintClientProtocol(dAtA, i, uint64(m.Result))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x8
 	}
+	return len(dAtA) - i, nil
+}
+
+func (m *Msg_CreatRoleReq) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Msg_CreatRoleReq) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Msg_CreatRoleReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Gender != 0 {
+		i = encodeVarintClientProtocol(dAtA, i, uint64(m.Gender))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintClientProtocol(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *Msg_CreatRoleRsp) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Msg_CreatRoleRsp) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Msg_CreatRoleRsp) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	if m.Result != 0 {
 		i = encodeVarintClientProtocol(dAtA, i, uint64(m.Result))
 		i--
@@ -356,6 +835,54 @@ func encodeVarintClientProtocol(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *RoleData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovClientProtocol(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovClientProtocol(uint64(l))
+	}
+	if m.Gender != 0 {
+		n += 1 + sovClientProtocol(uint64(m.Gender))
+	}
+	if len(m.Items) > 0 {
+		for _, e := range m.Items {
+			l = e.Size()
+			n += 1 + l + sovClientProtocol(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ItemData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovClientProtocol(uint64(l))
+	}
+	if m.StaticId != 0 {
+		n += 1 + sovClientProtocol(uint64(m.StaticId))
+	}
+	if m.Count != 0 {
+		n += 1 + sovClientProtocol(uint64(m.Count))
+	}
+	if m.Exp != 0 {
+		n += 1 + sovClientProtocol(uint64(m.Exp))
+	}
+	return n
+}
+
 func (m *Msg_Ping) Size() (n int) {
 	if m == nil {
 		return 0
@@ -391,9 +918,33 @@ func (m *Msg_LoginRsp) Size() (n int) {
 	if m.Result != 0 {
 		n += 1 + sovClientProtocol(uint64(m.Result))
 	}
-	l = len(m.Message)
+	return n
+}
+
+func (m *Msg_CreatRoleReq) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovClientProtocol(uint64(l))
+	}
+	if m.Gender != 0 {
+		n += 1 + sovClientProtocol(uint64(m.Gender))
+	}
+	return n
+}
+
+func (m *Msg_CreatRoleRsp) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Result != 0 {
+		n += 1 + sovClientProtocol(uint64(m.Result))
 	}
 	return n
 }
@@ -403,6 +954,318 @@ func sovClientProtocol(x uint64) (n int) {
 }
 func sozClientProtocol(x uint64) (n int) {
 	return sovClientProtocol(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *RoleData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClientProtocol
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RoleData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RoleData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gender", wireType)
+			}
+			m.Gender = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Gender |= Gender(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Items", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Items = append(m.Items, &ItemData{})
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClientProtocol(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ItemData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClientProtocol
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ItemData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ItemData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StaticId", wireType)
+			}
+			m.StaticId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StaticId |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
+			}
+			m.Count = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Count |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Exp", wireType)
+			}
+			m.Exp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Exp |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClientProtocol(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *Msg_Ping) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -622,9 +1485,62 @@ func (m *Msg_LoginRsp) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 2:
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClientProtocol(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Msg_CreatRoleReq) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClientProtocol
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Msg_CreatRoleReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Msg_CreatRoleReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -652,8 +1568,99 @@ func (m *Msg_LoginRsp) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Message = string(dAtA[iNdEx:postIndex])
+			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gender", wireType)
+			}
+			m.Gender = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Gender |= Gender(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipClientProtocol(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthClientProtocol
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Msg_CreatRoleRsp) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowClientProtocol
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Msg_CreatRoleRsp: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Msg_CreatRoleRsp: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
+			}
+			m.Result = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClientProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Result |= Msg_CreatRoleRsp_ErrorCode(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipClientProtocol(dAtA[iNdEx:])
